@@ -111,11 +111,27 @@ def api_pair_data(request, pair_id):
             {
                 'timestamp': data.timestamp.isoformat(),
                 'close': float(data.close_price),
+                'close_price': float(data.close_price),
                 'open': float(data.open_price),
+                'open_price': float(data.open_price),
                 'high': float(data.high_price),
+                'high_price': float(data.high_price),
                 'low': float(data.low_price),
-                'rsi': data.indicators.rsi if hasattr(data, 'indicators') and data.indicators else None,
-                'macd': data.indicators.macd if hasattr(data, 'indicators') and data.indicators else None,
+                'low_price': float(data.low_price),
+                'volume': data.volume if data.volume else 0,
+                'indicators': {
+                    'rsi': float(data.indicators.rsi) if (hasattr(data, 'indicators') and data.indicators and data.indicators.rsi) else None,
+                    'macd': float(data.indicators.macd) if (hasattr(data, 'indicators') and data.indicators and data.indicators.macd) else None,
+                    'macd_signal': float(data.indicators.macd_signal) if (hasattr(data, 'indicators') and data.indicators and data.indicators.macd_signal) else None,
+                    'sma_20': float(data.indicators.sma_20) if (hasattr(data, 'indicators') and data.indicators and data.indicators.sma_20) else None,
+                    'sma_50': float(data.indicators.sma_50) if (hasattr(data, 'indicators') and data.indicators and data.indicators.sma_50) else None,
+                } if (hasattr(data, 'indicators') and data.indicators) else {
+                    'rsi': None,
+                    'macd': None,
+                    'macd_signal': None,
+                    'sma_20': None,
+                    'sma_50': None,
+                }
             }
             for data in forex_data
         ]

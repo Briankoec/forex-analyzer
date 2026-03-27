@@ -250,88 +250,149 @@ function loadCharts() {
 }
 
 function renderCharts(dataPoints) {
-    if (!dataPoints || dataPoints.length === 0) return;
+    if (!dataPoints || dataPoints.length === 0) {
+        console.warn('No data points provided');
+        return;
+    }
     
-    const labels = dataPoints.map(p => new Date(p.timestamp).toLocaleDateString());
-    const prices = dataPoints.map(p => parseFloat(p.close_price));
-    const rsi = dataPoints.map(p => p.indicators?.rsi);
-    const macd = dataPoints.map(p => p.indicators?.macd);
+    const labels = dataPoints.map(p => {
+        const date = new Date(p.timestamp);
+        return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
+    });
+    const prices = dataPoints.map(p => parseFloat(p.close_price || p.close || 0));
+    const rsi = dataPoints.map(p => p.indicators?.rsi !== null ? p.indicators?.rsi : null);
+    const macd = dataPoints.map(p => p.indicators?.macd !== null ? p.indicators?.macd : null);
     
     try {
+        // Destroy existing charts if they exist
+        if (window.priceChart) {
+            window.priceChart.destroy();
+        }
+        if (window.rsiChart) {
+            window.rsiChart.destroy();
+        }
+        if (window.macdChart) {
+            window.macdChart.destroy();
+        }
+        
         // Price Chart
-        new Chart(document.getElementById('priceChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'Close Price',
-                    data: prices,
-                    borderColor: '#00ff88',
-                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {legend: {display: true}},
-                scales: {
-                    y: {ticks: {color: '#fff'}},
-                    x: {ticks: {color: '#fff'}}
+        const priceCtx = document.getElementById('priceChart');
+        if (priceCtx) {
+            window.priceChart = new Chart(priceCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Close Price',
+                        data: prices,
+                        borderColor: '#00ff88',
+                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        borderWidth: 2,
+                        pointRadius: 3,
+                        pointBackgroundColor: '#00ff88',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {display: true, labels: {color: '#fff'}},
+                    },
+                    scales: {
+                        y: {
+                            ticks: {color: '#fff'},
+                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
+                        },
+                        x: {
+                            ticks: {color: '#fff'},
+                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
+                        }
+                    }
                 }
-            }
-        });
+            });
+        }
         
         // RSI Chart
-        new Chart(document.getElementById('rsiChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'RSI (14)',
-                    data: rsi,
-                    borderColor: '#1e88e5',
-                    backgroundColor: 'rgba(30, 136, 229, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {display: true},
+        const rsiCtx = document.getElementById('rsiChart');
+        if (rsiCtx) {
+            window.rsiChart = new Chart(rsiCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'RSI (14)',
+                        data: rsi,
+                        borderColor: '#1e88e5',
+                        backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#1e88e5',
+                    }]
                 },
-                scales: {
-                    y: {min: 0, max: 100, ticks: {color: '#fff'}},
-                    x: {ticks: {color: '#fff'}}
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {display: true, labels: {color: '#fff'}},
+                    },
+                    scales: {
+                        y: {
+                            min: 0,
+                            max: 100,
+                            ticks: {color: '#fff'},
+                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
+                        },
+                        x: {
+                            ticks: {color: '#fff'},
+                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
+                        }
+                    }
                 }
-            }
-        });
+            });
+        }
         
         // MACD Chart
-        new Chart(document.getElementById('macdChart'), {
-            type: 'line',
-            data: {
-                labels: labels,
-                datasets: [{
-                    label: 'MACD',
-                    data: macd,
-                    borderColor: '#00d4ff',
-                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {legend: {display: true}},
-                scales: {y: {ticks: {color: '#fff'}}, x: {ticks: {color: '#fff'}}}
-            }
-        });
+        const macdCtx = document.getElementById('macdChart');
+        if (macdCtx) {
+            window.macdChart = new Chart(macdCtx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'MACD',
+                        data: macd,
+                        borderColor: '#00d4ff',
+                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 2,
+                        pointBackgroundColor: '#00d4ff',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {display: true, labels: {color: '#fff'}},
+                    },
+                    scales: {
+                        y: {
+                            ticks: {color: '#fff'},
+                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
+                        },
+                        x: {
+                            ticks: {color: '#fff'},
+                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
+                        }
+                    }
+                }
+            });
+        }
+        
+        console.log('Charts rendered successfully with', dataPoints.length, 'data points');
         
     } catch (error) {
         console.error('Error rendering charts:', error);
