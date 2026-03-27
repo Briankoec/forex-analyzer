@@ -1,0 +1,334 @@
+{% extends 'base.html' %}
+
+{% block title %}Market Ticker | Forex Analyzer Pro{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Header Section -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="text-glow-cyan mb-2"><i class="fas fa-globe"></i> Global Forex & Crypto Markets</h1>
+                    <p class="text-muted">Live trading signals and technical analysis</p>
+                </div>
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPairModal">
+                    <i class="fas fa-plus"></i> Add Pair
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TradingView Live Ticker Widget -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bolt text-glow-green"></i> Live Market Ticker</h5>
+                </div>
+                <div class="card-body" style="padding: 0; height: 120px; background: rgba(0, 0, 0, 0.3);">
+                    <div class="tradingview-widget-container" style="height: 100%; width: 100%;">
+                        <div class="tradingview-widget-container__widget" style="height: calc(100% - 32px);"></div>
+                        <div class="tradingview-widget-attribution"></div>
+                        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-ticker-tape.js"></script>
+                        <script type="text/javascript">
+                            new TradingView.widget({
+                                "symbols": [
+                                    {"proName":"FX_IDC:EURUSD","title":"EUR/USD"},
+                                    {"proName":"FX_IDC:GBPUSD","title":"GBP/USD"},
+                                    {"proName":"FX_IDC:USDJPY","title":"USD/JPY"},
+                                    {"proName":"BITSTAMP:BTCUSD","title":"BTC/USD"},
+                                    {"proName":"BITSTAMP:ETHUSD","title":"ETH/USD"},
+                                    {"proName":"FX_IDC:AUDUSD","title":"AUD/USD"},
+                                    {"proName":"FX_IDC:CADUSD","title":"CAD/USD"},
+                                    {"proName":"BITSTAMP:XRPUSD","title":"XRP/USD"}
+                                ],
+                                "showSymbolLogo": true,
+                                "isTransparent": true,
+                                "colorTheme": "dark",
+                                "locale": "en"
+                            });
+                        </script>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Market Overview Cards -->
+    {% if pairs %}
+    <div class="row">
+        {% for pair in pairs %}
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="card pair-card h-100" onclick="window.location.href='{% url 'analyzer:pair_detail' pair.id %}'" style="cursor: pointer;">
+                <div class="card-body">
+                    <!-- Pair Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 class="card-title mb-0">
+                                <span class="text-glow-cyan">{{ pair.symbol }}</span>
+                            </h5>
+                            <small class="text-muted">{{ pair.name }}</small>
+                        </div>
+                        <button class="btn btn-sm btn-outline-info" onclick="event.stopPropagation(); refreshPair(event, {{ pair.id }});">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+
+                    <!-- Price Display -->
+                    {% with latest_data=pair.data.all|first %}
+                        {% if latest_data %}
+                        <div class="mb-3">
+                            <div class="d-flex align-items-baseline gap-2">
+                                <h4 class="mb-0 text-glow-green" data-pair-id="{{ pair.id }}" class="livePrice">{{ latest_data.close_price }}</h4>
+                                <small class="text-muted">{{ latest_data.open_price }}</small>
+                                <span class="badge badge-success" style="font-size: 0.7rem; animation: pulse 1s infinite;">
+                                    <i class="fas fa-circle"></i> LIVE
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- OHLC Info -->
+                        <div class="small text-muted mb-3 row">
+                            <div class="col-6">
+                                <div class="mb-1"><span>Low:</span> <span class="text-glow-cyan">{{ latest_data.low_price|floatformat:5 }}</span></div>
+                                <div><span>High:</span> <span class="text-glow-cyan">{{ latest_data.high_price|floatformat:5 }}</span></div>
+                            </div>
+                            <div class="col-6">
+                                <div class="mb-1"><span>Vol:</span> <span class="text-glow-cyan">{{ latest_data.volume }}</span></div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Indicators -->
+                        {% if latest_data.indicators %}
+                        <div class="mb-3 p-2" style="background: rgba(0, 212, 255, 0.1); border-radius: 8px;">
+                            <div class="small d-flex justify-content-between mb-1">
+                                <span class="text-muted">RSI:</span>
+                                <span class="text-glow-green">{{ latest_data.indicators.rsi|floatformat:1 }}</span>
+                            </div>
+                            <div class="small d-flex justify-content-between">
+                                <span class="text-muted">MACD:</span>
+                                <span class="{% if latest_data.indicators.macd > latest_data.indicators.macd_signal %}text-success{% else %}text-danger{% endif %}">
+                                    {{ latest_data.indicators.macd|floatformat:4 }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endif %}
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Trading Signal -->
+                    {% with signal=pair.signals.all|first %}
+                        {% if signal %}
+                        <div class="mb-3">
+                            {% if signal.signal_type == 'BUY' %}
+                                <span class="badge w-100 py-2" style="background: linear-gradient(135deg, #00ff88 0%, #00ffaa 100%); color: #000; font-weight: 600;">
+                                    <i class="fas fa-arrow-up"></i> BUY SIGNAL
+                                </span>
+                            {% elif signal.signal_type == 'SELL' %}
+                                <span class="badge w-100 py-2" style="background: linear-gradient(135deg, #ff3333 0%, #ff5555 100%); color: white; font-weight: 600;">
+                                    <i class="fas fa-arrow-down"></i> SELL SIGNAL
+                                </span>
+                            {% else %}
+                                <span class="badge badge-neutral w-100 py-2">
+                                    <i class="fas fa-minus"></i> HOLD
+                                </span>
+                            {% endif %}
+                        </div>
+                        <small class="text-muted d-block">Confidence: {{ signal.confidence|floatformat:0 }}%</small>
+                        {% endif %}
+                    {% endwith %}
+
+                    <!-- Greed Scale Badge -->
+                    <div class="mt-3">
+                        {% if latest_data.indicators %}
+                            {% if latest_data.indicators.rsi >= 80 %}
+                                <span class="badge badge-extreme-greed w-100 py-2">EXTREME GREED 🔥</span>
+                            {% elif latest_data.indicators.rsi >= 60 %}
+                                <span class="badge badge-greed w-100 py-2">GREED 📈</span>
+                            {% elif latest_data.indicators.rsi >= 40 %}
+                                <span class="badge badge-neutral w-100 py-2">NEUTRAL ➡️</span>
+                            {% elif latest_data.indicators.rsi >= 20 %}
+                                <span class="badge badge-fear w-100 py-2">FEAR 📉</span>
+                            {% else %}
+                                <span class="badge badge-extreme-fear w-100 py-2">EXTREME FEAR ❄️</span>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-2" style="border-color: var(--accent) !important; background: rgba(0, 212, 255, 0.1);">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-inbox text-muted mb-3" style="font-size: 3rem;"></i>
+                    <p class="text-muted mb-3">No currency pairs available yet.</p>
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addPairModal">
+                        <i class="fas fa-plus"></i> Add Your First Pair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Add Pair Modal -->
+    <div class="modal fade" id="addPairModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content" style="background: rgba(20, 30, 60, 0.95); border: 1px solid var(--accent);">
+                <div class="modal-header border-bottom" style="border-color: var(--accent) !important;">
+                    <h5 class="modal-title text-glow-cyan">
+                        <i class="fas fa-plus"></i> Add New Currency Pair
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="fromCurrency" class="form-label text-glow-cyan">From Currency</label>
+                        <input type="text" class="form-control" id="fromCurrency" placeholder="EUR" maxlength="3"
+                               style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--accent); color: white;">
+                    </div>
+                    <div class="mb-3">
+                        <label for="toCurrency" class="form-label text-glow-cyan">To Currency</label>
+                        <input type="text" class="form-control" id="toCurrency" placeholder="USD" maxlength="3"
+                               style="background: rgba(0, 0, 0, 0.3); border: 1px solid var(--accent); color: white;">
+                    </div>
+                    <small class="text-warning d-block mb-3">
+                        <i class="fas fa-info-circle"></i> Data will be fetched from market sources.
+                    </small>
+                </div>
+                <div class="modal-footer border-top" style="border-color: var(--accent) !important;">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-primary" onclick="addNewPair()">
+                        <i class="fas fa-plus"></i> Add Pair
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .form-control:focus {
+        background: rgba(0, 0, 0, 0.5) !important;
+        border-color: var(--success) !important;
+        color: white;
+        box-shadow: 0 0 15px rgba(0, 255, 136, 0.3) !important;
+    }
+    
+    .form-control::placeholder {
+        color: rgba(255, 255, 255, 0.5);
+    }
+</style>
+
+<script>
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+// Real-time price updates for all pairs
+function startLiveUpdates() {
+    setInterval(function() {
+        const priceElements = document.querySelectorAll('.livePrice');
+        priceElements.forEach(element => {
+            const pairId = element.getAttribute('data-pair-id');
+            if (pairId) {
+                fetch(`/api/pair/${pairId}/data/?recent=true`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.data_points && data.data_points.length > 0) {
+                            const latestPoint = data.data_points[0];
+                            const oldPrice = parseFloat(element.textContent);
+                            const newPrice = parseFloat(latestPoint.close_price);
+                            
+                            // Update with color change effect
+                            if (newPrice > oldPrice) {
+                                element.style.color = '#00ff88';
+                            } else if (newPrice < oldPrice) {
+                                element.style.color = '#ff3333';
+                            }
+                            
+                            element.textContent = latestPoint.close_price;
+                        }
+                    })
+                    .catch(error => console.error('Price update error:', error));
+            }
+        });
+    }, 30000); // Update every 30 seconds
+}
+
+function addNewPair() {
+    const fromCurrency = document.getElementById('fromCurrency').value.toUpperCase();
+    const toCurrency = document.getElementById('toCurrency').value.toUpperCase();
+    
+    if (!fromCurrency || !toCurrency) {
+        alert('Please enter both currencies');
+        return;
+    }
+    
+    fetch(`/api/create-pair/?from=${fromCurrency}&to=${toCurrency}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(`Added ${data.symbol}! Reloading...`);
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert(`Error: ${data.error}`);
+            }
+        })
+        .catch(error => alert(`Error: ${error}`));
+}
+
+function refreshPair(event, pairId) {
+    event.stopPropagation();
+    const button = event.target.closest('button');
+    const originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    
+    const csrftoken = getCookie('csrftoken');
+    
+    fetch(`/pair/${pairId}/refresh/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert(`Error: ${data.error}`);
+                button.disabled = false;
+                button.innerHTML = originalHtml;
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`Error: ${error}`);
+            button.disabled = false;
+            button.innerHTML = originalHtml;
+        });
+}
+
+// Start live updates on page load
+document.addEventListener('DOMContentLoaded', startLiveUpdates);
+</script>
+{% endblock %}

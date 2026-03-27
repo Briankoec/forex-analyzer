@@ -1,0 +1,494 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ pair.symbol }} - Detailed Analysis | Forex Analyzer Pro{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <a href="{% url 'analyzer:index' %}" class="btn btn-outline-info btn-sm mb-3">
+                    <i class="fas fa-arrow-left"></i> Back to Dashboard
+                </a>
+                <h1 class="text-glow-cyan mb-2">
+                    <i class="fas fa-chart-area"></i> {{ pair.symbol }}
+                </h1>
+                <p class="text-muted">{{ pair.name }}</p>
+            </div>
+            <button class="btn btn-primary" onclick="refreshPairData()">
+                <i class="fas fa-sync-alt"></i> Refresh Data
+            </button>
+        </div>
+    </div>
+</div>
+
+{% if data_points %}
+<!-- Key Metrics -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Current Price</h6>
+                <h3 class="text-glow-green" id="livePrice">{{ latest_data.close_price }}</h3>
+                <small class="text-muted d-block mt-2" id="priceTimestamp">{{ latest_data.timestamp|date:"M d, Y H:i" }}</small>
+                <small class="badge badge-success" id="liveIndicator" style="display: none; margin-top: 8px;">
+                    <i class="fas fa-circle"></i> LIVE
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">RSI (Greed Scale)</h6>
+                {% if latest_data.indicators.rsi %}
+                    <h3>{{ latest_data.indicators.rsi|floatformat:1 }}</h3>
+                    {% if latest_data.indicators.rsi >= 80 %}
+                        <span class="badge badge-extreme-greed">EXTREME GREED 🔥</span>
+                    {% elif latest_data.indicators.rsi >= 60 %}
+                        <span class="badge badge-greed">GREED 📈</span>
+                    {% elif latest_data.indicators.rsi >= 40 %}
+                        <span class="badge badge-neutral">NEUTRAL ➡️</span>
+                    {% elif latest_data.indicators.rsi >= 20 %}
+                        <span class="badge badge-fear">FEAR 📉</span>
+                    {% else %}
+                        <span class="badge badge-extreme-fear">EXTREME FEAR ❄️</span>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">Calculating...</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">MACD</h6>
+                {% if latest_data.indicators.macd %}
+                    <h3 class="{% if latest_data.indicators.macd > latest_data.indicators.macd_signal %}price-change-positive{% else %}price-change-negative{% endif %}">
+                        {{ latest_data.indicators.macd|floatformat:5 }}
+                    </h3>
+                    <small class="text-muted">Signal: {{ latest_data.indicators.macd_signal|floatformat:5 }}</small>
+                {% else %}
+                    <p class="text-muted">N/A</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6">
+        <div class="card">
+            <div class="card-body text-center">
+                <h6 class="text-muted mb-2">Trend</h6>
+                {% if latest_data.indicators.sma_20 and latest_data.indicators.sma_50 %}
+                    <div class="mb-2">
+                        <small class="text-muted">SMA 20: <strong class="text-glow-cyan">{{ latest_data.indicators.sma_20|floatformat:5 }}</strong></small>
+                    </div>
+                    <div>
+                        <small class="text-muted">SMA 50: <strong class="text-glow-cyan">{{ latest_data.indicators.sma_50|floatformat:5 }}</strong></small>
+                    </div>
+                    {% if latest_data.indicators.sma_20 > latest_data.indicators.sma_50 %}
+                        <small class="badge bg-success mt-2" style="background: linear-gradient(135deg, #00ff88 0%, #00ffaa 100%); color: #000 !important;">Uptrend 📈</small>
+                    {% else %}
+                        <small class="badge bg-danger mt-2" style="background: linear-gradient(135deg, #ff3333 0%, #ff5555 100%);">Downtrend 📉</small>
+                    {% endif %}
+                {% else %}
+                    <p class="text-muted">N/A</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-bolt text-glow-green"></i> Live TradingView Chart</h5>
+            </div>
+            <div class="card-body" style="padding: 0; background: rgba(0, 0, 0, 0.5);">
+                <div id="tradingViewContainer" style="width: 100%; height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Price Chart</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">RSI Indicator</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">MACD Indicator</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="macdChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- OHLC Data Table -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Historical Data (Last 20 Days)</h5>
+            </div>
+            <div class="card-body" style="overflow-x: auto;">
+                <table class="table table-sm">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Open</th>
+                            <th>High</th>
+                            <th>Low</th>
+                            <th>Close</th>
+                            <th>Volume</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for data in data_points %}
+                        <tr>
+                            <td>{{ data.timestamp|date:"M d, Y" }}</td>
+                            <td>{{ data.open_price|floatformat:5 }}</td>
+                            <td>{{ data.high_price|floatformat:5 }}</td>
+                            <td>{{ data.low_price|floatformat:5 }}</td>
+                            <td class="text-glow-green">{{ data.close_price|floatformat:5 }}</td>
+                            <td>{{ data.volume }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trading Signals -->
+{% if signals %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Trading Signals</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for signal in signals %}
+                    <div class="col-lg-4 col-md-6 mb-3">
+                        <div class="p-3 rounded" style="background: rgba(0, 212, 255, 0.1); border: 1px solid var(--accent);">
+                            <h5 class="mb-2">
+                                {% if signal.signal_type == 'BUY' %}
+                                    <span class="badge" style="background: linear-gradient(135deg, #00ff88 0%, #00ffaa 100%); color: #000;">BUY</span>
+                                {% elif signal.signal_type == 'SELL' %}
+                                    <span class="badge" style="background: linear-gradient(135deg, #ff3333 0%, #ff5555 100%);">SELL</span>
+                                {% else %}
+                                    <span class="badge badge-neutral">HOLD</span>
+                                {% endif %}
+                            </h5>
+                            <p class="mb-1"><small class="text-muted">Confidence:</small> <strong class="text-glow-green">{{ signal.confidence|floatformat:0 }}%</strong></p>
+                            <p class="mb-2"><small class="text-muted">Greed Level:</small> <strong class="text-glow-cyan">{{ signal.get_greed_level_display }}</strong></p>
+                            <small class="text-muted">{{ signal.timestamp|date:"M d, Y H:i" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% else %}
+<div class="alert alert-warning">
+    <i class="fas fa-exclamation-circle"></i> No data available for this pair yet. <button class="btn btn-sm btn-primary" onclick="refreshPairData()">Fetch Data</button>
+</div>
+{% endif %}
+
+<script>
+function loadCharts() {
+    fetch(`/api/pair/{{ pair.id }}/data/`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.data_points && data.data_points.length > 0) {
+                renderCharts(data.data_points);
+            }
+        })
+        .catch(error => console.error('Error loading chart data:', error));
+}
+
+function renderCharts(dataPoints) {
+    if (!dataPoints || dataPoints.length === 0) return;
+    
+    const labels = dataPoints.map(p => new Date(p.timestamp).toLocaleDateString());
+    const prices = dataPoints.map(p => parseFloat(p.close_price));
+    const rsi = dataPoints.map(p => p.indicators?.rsi);
+    const macd = dataPoints.map(p => p.indicators?.macd);
+    
+    try {
+        // Price Chart
+        new Chart(document.getElementById('priceChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Close Price',
+                    data: prices,
+                    borderColor: '#00ff88',
+                    backgroundColor: 'rgba(0, 255, 136, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {display: true}},
+                scales: {
+                    y: {ticks: {color: '#fff'}},
+                    x: {ticks: {color: '#fff'}}
+                }
+            }
+        });
+        
+        // RSI Chart
+        new Chart(document.getElementById('rsiChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'RSI (14)',
+                    data: rsi,
+                    borderColor: '#1e88e5',
+                    backgroundColor: 'rgba(30, 136, 229, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {display: true},
+                },
+                scales: {
+                    y: {min: 0, max: 100, ticks: {color: '#fff'}},
+                    x: {ticks: {color: '#fff'}}
+                }
+            }
+        });
+        
+        // MACD Chart
+        new Chart(document.getElementById('macdChart'), {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'MACD',
+                    data: macd,
+                    borderColor: '#00d4ff',
+                    backgroundColor: 'rgba(0, 212, 255, 0.1)',
+                    tension: 0.4,
+                    fill: true,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {legend: {display: true}},
+                scales: {y: {ticks: {color: '#fff'}}, x: {ticks: {color: '#fff'}}}
+            }
+        });
+        
+    } catch (error) {
+        console.error('Error rendering charts:', error);
+    }
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+function refreshPairData() {
+    const csrftoken = getCookie('csrftoken');
+    const button = event.target;
+    button.disabled = true;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
+    
+    fetch(`/pair/{{ pair.id }}/refresh/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrftoken,
+            'Content-Type': 'application/json'
+        }
+    })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Data refreshed successfully!');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                alert(`Error: ${data.error}`);
+                button.disabled = false;
+                button.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert(`Error: ${error}`);
+            button.disabled = false;
+            button.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
+        });
+}
+
+document.addEventListener('DOMContentLoaded', loadCharts);
+</script>
+
+<!-- TradingView Lightweight Charts Integration -->
+<script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"></script>
+<script>
+// Initialize TradingView Chart
+document.addEventListener('DOMContentLoaded', function() {
+    const container = document.getElementById('tradingViewContainer');
+    if (container) {
+        const pairSymbol = '{{ pair.symbol }}';
+        
+        // Map our symbols to TradingView symbols
+        const symbolMap = {
+            'EUR/USD': 'FX_IDC:EURUSD',
+            'GBP/USD': 'FX_IDC:GBPUSD',
+            'USD/JPY': 'FX_IDC:USDJPY',
+            'AUD/USD': 'FX_IDC:AUDUSD',
+            'CAD/USD': 'FX_IDC:CADUSD',
+            'BTC/USD': 'BITSTAMP:BTCUSD',
+            'ETH/USD': 'BITSTAMP:ETHUSD',
+            'XRP/USD': 'BITSTAMP:XRPUSD'
+        };
+        
+        const tvSymbol = symbolMap[pairSymbol] || pairSymbol;
+        
+        // Create TradingView widget
+        new TradingView.widget({
+            "autosize": false,
+            "width": "100%",
+            "height": "500",
+            "symbol": tvSymbol,
+            "interval": "D",
+            "timezone": "Etc/UTC",
+            "theme": "dark",
+            "style": "1",
+            "locale": "en",
+            "enable_publishing": false,
+            "backgroundColor": "rgba(0, 0, 0, 0)",
+            "gridColor": "rgba(0, 212, 255, 0.1)",
+            "hide_side_toolbar": false,
+            "withdateranges": true,
+            "range": "3M",
+            "allow_symbol_change": true,
+            "save_image": true,
+            "container_id": "tradingViewContainer"
+        });
+    }
+    
+    // Real-time price polling (every 10 seconds)
+let pricePollingInterval;
+
+function startRealtimePriceUpdates() {
+    // Show live indicator
+    document.getElementById('liveIndicator').style.display = 'inline-block';
+    
+    pricePollingInterval = setInterval(function() {
+        fetch(`/api/pair/{{ pair.id }}/data/?recent=true`)
+            .then(response => response.json())
+            .then(data => {
+                if (data.data_points && data.data_points.length > 0) {
+                    const latestPoint = data.data_points[0];
+                    
+                    // Update price with animation
+                    const priceElement = document.getElementById('livePrice');
+                    const oldPrice = parseFloat(priceElement.textContent);
+                    const newPrice = parseFloat(latestPoint.close_price);
+                    
+                    // Add price change animation
+                    if (newPrice > oldPrice) {
+                        priceElement.style.color = '#00ff88';
+                    } else if (newPrice < oldPrice) {
+                        priceElement.style.color = '#ff3333';
+                    }
+                    
+                    priceElement.textContent = latestPoint.close_price;
+                    document.getElementById('priceTimestamp').textContent = new Date(latestPoint.timestamp).toLocaleString();
+                }
+            })
+            .catch(error => console.error('Real-time price update error:', error));
+    }, 10000); // Update every 10 seconds
+}
+
+function stopRealtimePriceUpdates() {
+    if (pricePollingInterval) {
+        clearInterval(pricePollingInterval);
+    }
+    document.getElementById('liveIndicator').style.display = 'none';
+}
+
+// Start updates when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    startRealtimePriceUpdates();
+});
+
+// Stop updates when user leaves page
+document.addEventListener('visibilitychange', function() {
+    if (document.hidden) {
+        stopRealtimePriceUpdates();
+    } else {
+        startRealtimePriceUpdates();
+    }
+});
+
+});
+</script>
+{% endblock %}

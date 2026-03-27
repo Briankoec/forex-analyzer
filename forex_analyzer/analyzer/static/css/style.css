@@ -1,0 +1,428 @@
+/* Vibrant Forex Analyzer Styles */
+:root {
+    --primary: #1e88e5;
+    --success: #00ff88;
+    --danger: #ff3333;
+    --warning: #ffaa00;
+    --dark: #0a0e27;
+    --accent: #00d4ff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background: linear-gradient(135deg, var(--dark) 0%, #1a1f3a 100%);
+    color: #fff;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    min-height: 100vh;
+    position: relative;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at 50% 0%, rgba(30, 136, 229, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Navbar Styling */
+.navbar {
+    background: rgba(10, 14, 39, 0.95) !important;
+    backdrop-filter: blur(10px);
+    border-bottom: 2px solid var(--accent);
+    box-shadow: 0 0 20px rgba(0, 212, 255, 0.2);
+}
+
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--success) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 0.5px;
+}
+
+.nav-link {
+    color: rgba(255, 255, 255, 0.8) !important;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-link:hover {
+    color: var(--accent) !important;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--success));
+    transition: width 0.3s ease;
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* Card Styling */
+.card {
+    background: rgba(30, 40, 80, 0.8);
+    border: 1px solid var(--accent);
+    border-radius: 12px;
+    backdrop-filter: blur(10px);
+    transition: all 0.3s ease;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.card:hover {
+    border-color: var(--success);
+    transform: translateY(-3px);
+    box-shadow: 0 20px 40px rgba(0, 255, 136, 0.15);
+}
+
+.card-header {
+    background: rgba(0, 212, 255, 0.05);
+    border-bottom: 1px solid var(--accent);
+    border-radius: 12px 12px 0 0;
+}
+
+.card-body {
+    padding: 1.5rem;
+}
+
+/* Text Glow Effects */
+.text-glow-cyan {
+    color: var(--accent);
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+
+.text-glow-green {
+    color: var(--success);
+    text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.text-glow-red {
+    color: var(--danger);
+    text-shadow: 0 0 10px rgba(255, 51, 51, 0.5);
+}
+
+/* Button Styling */
+.btn-primary {
+    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    border: none;
+    box-shadow: 0 5px 15px rgba(30, 136, 229, 0.3);
+    font-weight: 600;
+    transition: all 0.3s ease;
+}
+
+.btn-primary:hover {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--primary) 100%);
+    box-shadow: 0 8px 25px rgba(0, 212, 255, 0.5);
+    transform: translateY(-2px);
+}
+
+.btn-outline-info {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.btn-outline-info:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--dark);
+}
+
+/* Badge Styling */
+.badge-extreme-greed {
+    background: linear-gradient(135deg, #ff0055 0%, #ff4477 100%);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(255, 0, 85, 0.3);
+}
+
+.badge-greed {
+    background: linear-gradient(135deg, #ff6600 0%, #ff8833 100%);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(255, 102, 0, 0.3);
+}
+
+.badge-neutral {
+    background: linear-gradient(135deg, #666 0%, #888 100%);
+    color: white;
+    font-weight: 600;
+}
+
+.badge-fear {
+    background: linear-gradient(135deg, #0088ff 0%, #00bbff 100%);
+    color: white;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(0, 136, 255, 0.3);
+}
+
+.badge-extreme-fear {
+    background: linear-gradient(135deg, #00ff88 0%, #00ffaa 100%);
+    color: #000;
+    font-weight: 600;
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+}
+
+/* Pair Card Styling */
+.pair-card {
+    background: linear-gradient(135deg, rgba(30, 136, 229, 0.3) 0%, rgba(0, 212, 255, 0.2) 100%);
+    border: 2px solid var(--accent) !important;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.pair-card:hover {
+    background: linear-gradient(135deg, rgba(0, 255, 136, 0.3) 0%, rgba(0, 212, 255, 0.3) 100%);
+    border-color: var(--success) !important;
+    transform: translateY(-8px) !important;
+    box-shadow: 0 20px 40px rgba(0, 255, 136, 0.3) !important;
+}
+
+.pair-card .card-title {
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+/* Price Change Colors */
+.price-change-positive {
+    color: var(--success);
+    font-weight: 600;
+}
+
+.price-change-negative {
+    color: var(--danger);
+    font-weight: 600;
+}
+
+/* Chart Container */
+.chart-container {
+    position: relative;
+    height: 400px;
+    margin: 20px 0;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 12px;
+    padding: 15px;
+    border: 1px solid var(--accent);
+    box-shadow: 0 8px 32px rgba(0, 212, 255, 0.1);
+}
+
+canvas {
+    filter: drop-shadow(0 0 10px rgba(0, 212, 255, 0.1));
+}
+
+/* Table Styling */
+.table {
+    color: #fff;
+}
+
+.table thead {
+    border-color: var(--accent);
+}
+
+.table thead th {
+    color: var(--accent);
+    border-bottom: 2px solid var(--accent);
+    font-weight: 600;
+}
+
+.table tbody tr {
+    border-bottom: 1px solid rgba(0, 212, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.table tbody tr:hover {
+    background: rgba(0, 212, 255, 0.1);
+}
+
+/* Form Controls */
+.form-control {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--accent);
+    color: white;
+    transition: all 0.3s ease;
+}
+
+.form-control:focus {
+    background: rgba(0, 0, 0, 0.5);
+    border-color: var(--success);
+    color: white;
+    box-shadow: 0 0 15px rgba(0, 255, 136, 0.3) !important;
+}
+
+.form-control::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.form-label {
+    color: var(--accent);
+    font-weight: 500;
+}
+
+/* Modal Styling */
+.modal-content {
+    background: rgba(20, 30, 60, 0.95);
+    border: 1px solid var(--accent);
+    box-shadow: 0 20px 60px rgba(0, 212, 255, 0.2);
+}
+
+.modal-header {
+    border-bottom-color: var(--accent) !important;
+}
+
+.modal-footer {
+    border-top-color: var(--accent) !important;
+}
+
+.btn-close-white:focus {
+    box-shadow: 0 0 0 0.25rem rgba(0, 212, 255, 0.25);
+}
+
+/* Alert Styling */
+.alert {
+    border-radius: 12px;
+    border: 1px solid;
+    backdrop-filter: blur(10px);
+}
+
+.alert-info {
+    background: rgba(0, 212, 255, 0.1);
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.alert-warning {
+    background: rgba(255, 170, 0, 0.1);
+    border-color: var(--warning);
+    color: var(--warning);
+}
+
+.alert-danger {
+    background: rgba(255, 51, 51, 0.1);
+    border-color: var(--danger);
+    color: var(--danger);
+}
+
+.alert-success {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: var(--success);
+    color: var(--success);
+}
+
+/* Signal Cards */
+.signal-buy {
+    background: rgba(0, 255, 136, 0.1);
+    border: 1px solid var(--success);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--success);
+}
+
+.signal-sell {
+    background: rgba(255, 51, 51, 0.1);
+    border: 1px solid var(--danger);
+    border-radius: 8px;
+    padding: 12px;
+    color: var(--danger);
+}
+
+.signal-hold {
+    background: rgba(100, 100, 100, 0.1);
+    border: 1px solid #999;
+    border-radius: 8px;
+    padding: 12px;
+    color: #999;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .navbar-brand {
+        font-size: 1.3rem;
+    }
+    
+    .pair-card {
+        margin-bottom: 10px;
+    }
+    
+    .chart-container {
+        height: 300px;
+    }
+    
+    h1 {
+        font-size: 1.8rem;
+    }
+    
+    h5 {
+        font-size: 1rem;
+    }
+}
+
+/* Animations */
+@keyframes pulse-glow {
+    0% {
+        text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    }
+    50% {
+        text-shadow: 0 0 20px rgba(0, 212, 255, 0.8);
+    }
+    100% {
+        text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+    }
+}
+
+@keyframes slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.text-glow-cyan {
+    animation: pulse-glow 2s ease-in-out infinite;
+}
+
+.pair-card {
+    animation: slide-up 0.5s ease-out;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: rgba(10, 14, 39, 0.8);
+}
+
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, var(--primary), var(--accent));
+    border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, var(--accent), var(--success));
+}

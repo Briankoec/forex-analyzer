@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: forex_analyzer
+    ports:
+      - "8000:8000"
+    environment:
+      - DEBUG=False
+      - ALLOWED_HOSTS=localhost,127.0.0.1,0.0.0.0
+      - ALPHA_VANTAGE_API_KEY=${ALPHA_VANTAGE_API_KEY:-demo}
+    volumes:
+      - ./forex_analyzer:/app
+      - sqlite_db:/app/data
+    command: sh -c "python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn forex_analyzer.wsgi:application --bind 0.0.0.0:8000 --workers 4"
+
+volumes:
+  sqlite_db:

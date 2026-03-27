@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: forex-analyzer
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt && cd forex_analyzer && python manage.py collectstatic --noinput
+    startCommand: cd forex_analyzer && gunicorn forex_analyzer.wsgi:application
+    envVars:
+      - key: DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.12.0"
