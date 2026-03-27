@@ -4,6 +4,7 @@ services:
     env: python
     plan: free
     buildCommand: pip install -r requirements.txt && cd forex_analyzer && python manage.py collectstatic --noinput
+    postBuildCommand: cd forex_analyzer && python manage.py migrate && python manage.py init_pairs && python manage.py populate_sample_data --days 60
     startCommand: cd forex_analyzer && gunicorn forex_analyzer.wsgi:application
     envVars:
       - key: DEBUG
