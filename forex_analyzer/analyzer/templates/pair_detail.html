@@ -108,51 +108,54 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-bolt text-glow-green"></i> Live TradingView Chart</h5>
-            </div>
-            <div class="card-body" style="padding: 0; background: rgba(0, 0, 0, 0.5);">
-                <div id="tradingViewContainer" style="width: 100%; height: 500px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-lg-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Price Chart</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 400px;">
-                    <canvas id="priceChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">RSI Indicator</h5>
+                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Charts & Analysis</h5>
+                <ul class="nav nav-tabs card-header-tabs" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tradingview-tab" data-bs-toggle="tab" data-bs-target="#tradingview" type="button" role="tab" aria-controls="tradingview" aria-selected="true">
+                            <i class="fas fa-bolt"></i> TradingView
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="price-tab" data-bs-toggle="tab" data-bs-target="#price" type="button" role="tab" aria-controls="price" aria-selected="false">
+                            <i class="fas fa-chart-line"></i> Price Chart
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators" type="button" role="tab" aria-controls="indicators" aria-selected="false">
+                            <i class="fas fa-chart-bar"></i> Indicators
+                        </button>
+                    </li>
+                </ul>
             </div>
             <div class="card-body">
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="rsiChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">MACD Indicator</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="macdChart"></canvas>
+                <div class="tab-content" id="chartTabsContent">
+                    <!-- TradingView Tab -->
+                    <div class="tab-pane fade show active" id="tradingview" role="tabpanel" aria-labelledby="tradingview-tab">
+                        <div id="tradingViewContainer" style="width: 100%; height: 500px;"></div>
+                    </div>
+                    <!-- Price Chart Tab -->
+                    <div class="tab-pane fade" id="price" role="tabpanel" aria-labelledby="price-tab">
+                        <div class="chart-container" style="height: 500px;">
+                            <canvas id="priceChart"></canvas>
+                        </div>
+                    </div>
+                    <!-- Indicators Tab -->
+                    <div class="tab-pane fade" id="indicators" role="tabpanel" aria-labelledby="indicators-tab">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-glow-cyan mb-3">RSI Indicator</h6>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="rsiChart"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <h6 class="text-glow-cyan mb-3">MACD Indicator</h6>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="macdChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

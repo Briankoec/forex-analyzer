@@ -98,104 +98,146 @@ function loadChartData(pairId) {
  * Render chart using Chart.js
  */
 function renderChart(data) {
-    const ctx = document.getElementById('priceChart');
-    if (!ctx) return;
-    
     const timestamps = data.data_points.map(p => new Date(p.timestamp).toLocaleDateString());
     const prices = data.data_points.map(p => p.close);
     const rsiValues = data.data_points.map(p => p.rsi || 0);
+    const macdValues = data.data_points.map(p => p.macd || 0);
+    const macdSignalValues = data.data_points.map(p => p.macd_signal || 0);
     
-    new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: timestamps,
-            datasets: [
-                {
+    // Price Chart
+    const priceCtx = document.getElementById('priceChart');
+    if (priceCtx) {
+        new Chart(priceCtx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
                     label: 'Price',
                     data: prices,
                     borderColor: '#00d97e',
                     backgroundColor: 'rgba(0, 217, 126, 0.1)',
                     borderWidth: 2,
                     tension: 0.4,
-                    fill: true,
-                    yAxisID: 'y'
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    }
                 },
-                {
+                scales: {
+                    y: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+    }
+    
+    // RSI Chart
+    const rsiCtx = document.getElementById('rsiChart');
+    if (rsiCtx) {
+        new Chart(rsiCtx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [{
                     label: 'RSI',
                     data: rsiValues,
                     borderColor: '#ffd93d',
                     backgroundColor: 'rgba(255, 217, 61, 0.1)',
                     borderWidth: 2,
                     tension: 0.4,
-                    yAxisID: 'y1'
-                }
-            ]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            interaction: {
-                mode: 'index',
-                intersect: false
+                    fill: true
+                }]
             },
-            plugins: {
-                legend: {
-                    labels: {
-                        color: '#fff',
-                        font: {
-                            size: 12,
-                            weight: 'bold'
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff',
+                            font: { size: 12, weight: 'bold' }
                         }
                     }
                 },
-                title: {
-                    color: '#fff'
-                }
-            },
-            scales: {
-                y: {
-                    type: 'linear',
-                    display: true,
-                    position: 'left',
-                    title: {
-                        display: true,
-                        text: 'Price',
-                        color: '#00d97e'
+                scales: {
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
                     },
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)'
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
-                    }
-                },
-                y1: {
-                    type: 'linear',
-                    display: true,
-                    position: 'right',
-                    title: {
-                        display: true,
-                        text: 'RSI',
-                        color: '#ffd93d'
-                    },
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)'
-                    },
-                    grid: {
-                        drawOnChartArea: false
-                    }
-                },
-                x: {
-                    ticks: {
-                        color: 'rgba(255, 255, 255, 0.7)'
-                    },
-                    grid: {
-                        color: 'rgba(255, 255, 255, 0.1)'
+                    x: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
                     }
                 }
             }
-        }
-    });
+        });
+    }
+    
+    // MACD Chart
+    const macdCtx = document.getElementById('macdChart');
+    if (macdCtx) {
+        new Chart(macdCtx, {
+            type: 'line',
+            data: {
+                labels: timestamps,
+                datasets: [
+                    {
+                        label: 'MACD',
+                        data: macdValues,
+                        borderColor: '#ff6b6b',
+                        borderWidth: 2,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Signal',
+                        data: macdSignalValues,
+                        borderColor: '#4ecdc4',
+                        borderWidth: 2,
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#fff',
+                            font: { size: 12, weight: 'bold' }
+                        }
+                    }
+                },
+                scales: {
+                    y: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    },
+                    x: {
+                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
+                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    }
+                }
+            }
+        });
+    }
 }
 
 /**
