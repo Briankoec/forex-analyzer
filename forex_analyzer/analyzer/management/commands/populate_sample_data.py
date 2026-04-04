@@ -44,6 +44,14 @@ class Command(BaseCommand):
             ('EUR/USD', 1.0850, 'Euro to US Dollar'),
             ('GBP/USD', 1.2650, 'British Pound to US Dollar'),
             ('USD/JPY', 149.50, 'US Dollar to Japanese Yen'),
+            ('AUD/USD', 0.6550, 'Australian Dollar to US Dollar'),
+            ('CAD/USD', 0.7350, 'Canadian Dollar to US Dollar'),
+            ('CHF/USD', 0.9150, 'Swiss Franc to US Dollar'),
+            ('NZD/USD', 0.6050, 'New Zealand Dollar to US Dollar'),
+            ('XAU/USD', 2050.00, 'Gold to US Dollar'),
+            ('XAG/USD', 23.50, 'Silver to US Dollar'),
+            ('BTC/USD', 45000.00, 'Bitcoin to US Dollar'),
+            ('ETH/USD', 2500.00, 'Ethereum to US Dollar'),
         ]
 
         for symbol, start_price, name in pairs_data:

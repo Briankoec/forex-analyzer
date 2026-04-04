@@ -108,54 +108,51 @@
     <div class="col-lg-12">
         <div class="card">
             <div class="card-header">
-                <h5 class="mb-0"><i class="fas fa-chart-area"></i> Charts & Analysis</h5>
-                <ul class="nav nav-tabs card-header-tabs" id="chartTabs" role="tablist">
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link active" id="tradingview-tab" data-bs-toggle="tab" data-bs-target="#tradingview" type="button" role="tab" aria-controls="tradingview" aria-selected="true">
-                            <i class="fas fa-bolt"></i> TradingView
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="price-tab" data-bs-toggle="tab" data-bs-target="#price" type="button" role="tab" aria-controls="price" aria-selected="false">
-                            <i class="fas fa-chart-line"></i> Price Chart
-                        </button>
-                    </li>
-                    <li class="nav-item" role="presentation">
-                        <button class="nav-link" id="indicators-tab" data-bs-toggle="tab" data-bs-target="#indicators" type="button" role="tab" aria-controls="indicators" aria-selected="false">
-                            <i class="fas fa-chart-bar"></i> Indicators
-                        </button>
-                    </li>
-                </ul>
+                <h5 class="mb-0"><i class="fas fa-bolt text-glow-green"></i> Live TradingView Chart</h5>
+            </div>
+            <div class="card-body" style="padding: 0; background: rgba(0, 0, 0, 0.5);">
+                <div id="tradingViewContainer" style="width: 100%; height: 500px;"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Price Chart</h5>
             </div>
             <div class="card-body">
-                <div class="tab-content" id="chartTabsContent">
-                    <!-- TradingView Tab -->
-                    <div class="tab-pane fade show active" id="tradingview" role="tabpanel" aria-labelledby="tradingview-tab">
-                        <div id="tradingViewContainer" style="width: 100%; height: 500px;"></div>
-                    </div>
-                    <!-- Price Chart Tab -->
-                    <div class="tab-pane fade" id="price" role="tabpanel" aria-labelledby="price-tab">
-                        <div class="chart-container" style="height: 500px;">
-                            <canvas id="priceChart"></canvas>
-                        </div>
-                    </div>
-                    <!-- Indicators Tab -->
-                    <div class="tab-pane fade" id="indicators" role="tabpanel" aria-labelledby="indicators-tab">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <h6 class="text-glow-cyan mb-3">RSI Indicator</h6>
-                                <div class="chart-container" style="height: 300px;">
-                                    <canvas id="rsiChart"></canvas>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <h6 class="text-glow-cyan mb-3">MACD Indicator</h6>
-                                <div class="chart-container" style="height: 300px;">
-                                    <canvas id="macdChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                <div class="chart-container" style="height: 400px;">
+                    <canvas id="priceChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">RSI Indicator</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="rsiChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">MACD Indicator</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container" style="height: 300px;">
+                    <canvas id="macdChart"></canvas>
                 </div>
             </div>
         </div>
@@ -240,216 +237,11 @@
 </div>
 {% endif %}
 
-<script>
-function loadCharts() {
-    fetch(`/api/pair/{{ pair.id }}/data/`)
-        .then(response => response.json())
-        .then(data => {
-            if (data.data_points && data.data_points.length > 0) {
-                renderCharts(data.data_points);
-            }
-        })
-        .catch(error => console.error('Error loading chart data:', error));
-}
 
-function renderCharts(dataPoints) {
-    if (!dataPoints || dataPoints.length === 0) {
-        console.warn('No data points provided');
-        return;
-    }
-    
-    const labels = dataPoints.map(p => {
-        const date = new Date(p.timestamp);
-        return date.toLocaleDateString('en-US', {month: 'short', day: 'numeric'});
-    });
-    const prices = dataPoints.map(p => parseFloat(p.close_price || p.close || 0));
-    const rsi = dataPoints.map(p => p.indicators?.rsi !== null ? p.indicators?.rsi : null);
-    const macd = dataPoints.map(p => p.indicators?.macd !== null ? p.indicators?.macd : null);
-    
-    try {
-        // Destroy existing charts if they exist
-        if (window.priceChart) {
-            window.priceChart.destroy();
-        }
-        if (window.rsiChart) {
-            window.rsiChart.destroy();
-        }
-        if (window.macdChart) {
-            window.macdChart.destroy();
-        }
-        
-        // Price Chart
-        const priceCtx = document.getElementById('priceChart');
-        if (priceCtx) {
-            window.priceChart = new Chart(priceCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'Close Price',
-                        data: prices,
-                        borderColor: '#00ff88',
-                        backgroundColor: 'rgba(0, 255, 136, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        borderWidth: 2,
-                        pointRadius: 3,
-                        pointBackgroundColor: '#00ff88',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {display: true, labels: {color: '#fff'}},
-                    },
-                    scales: {
-                        y: {
-                            ticks: {color: '#fff'},
-                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
-                        },
-                        x: {
-                            ticks: {color: '#fff'},
-                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
-                        }
-                    }
-                }
-            });
-        }
-        
-        // RSI Chart
-        const rsiCtx = document.getElementById('rsiChart');
-        if (rsiCtx) {
-            window.rsiChart = new Chart(rsiCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'RSI (14)',
-                        data: rsi,
-                        borderColor: '#1e88e5',
-                        backgroundColor: 'rgba(30, 136, 229, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 2,
-                        pointBackgroundColor: '#1e88e5',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {display: true, labels: {color: '#fff'}},
-                    },
-                    scales: {
-                        y: {
-                            min: 0,
-                            max: 100,
-                            ticks: {color: '#fff'},
-                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
-                        },
-                        x: {
-                            ticks: {color: '#fff'},
-                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
-                        }
-                    }
-                }
-            });
-        }
-        
-        // MACD Chart
-        const macdCtx = document.getElementById('macdChart');
-        if (macdCtx) {
-            window.macdChart = new Chart(macdCtx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [{
-                        label: 'MACD',
-                        data: macd,
-                        borderColor: '#00d4ff',
-                        backgroundColor: 'rgba(0, 212, 255, 0.1)',
-                        tension: 0.4,
-                        fill: true,
-                        pointRadius: 2,
-                        pointBackgroundColor: '#00d4ff',
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {display: true, labels: {color: '#fff'}},
-                    },
-                    scales: {
-                        y: {
-                            ticks: {color: '#fff'},
-                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
-                        },
-                        x: {
-                            ticks: {color: '#fff'},
-                            grid: {color: 'rgba(255, 255, 255, 0.1)'}
-                        }
-                    }
-                }
-            });
-        }
-        
-        console.log('Charts rendered successfully with', dataPoints.length, 'data points');
-        
-    } catch (error) {
-        console.error('Error rendering charts:', error);
-    }
-}
 
-function getCookie(name) {
-    let cookieValue = null;
-    if (document.cookie && document.cookie !== '') {
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-            const cookie = cookies[i].trim();
-            if (cookie.substring(0, name.length + 1) === (name + '=')) {
-                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
-                break;
-            }
-        }
-    }
-    return cookieValue;
-}
-
-function refreshPairData() {
-    const csrftoken = getCookie('csrftoken');
-    const button = event.target;
-    button.disabled = true;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Refreshing...';
-    
-    fetch(`/pair/{{ pair.id }}/refresh/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrftoken,
-            'Content-Type': 'application/json'
-        }
-    })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                alert('Data refreshed successfully!');
-                setTimeout(() => location.reload(), 1000);
-            } else {
-                alert(`Error: ${data.error}`);
-                button.disabled = false;
-                button.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            alert(`Error: ${error}`);
-            button.disabled = false;
-            button.innerHTML = '<i class="fas fa-sync-alt"></i> Refresh Data';
-        });
-}
-
-document.addEventListener('DOMContentLoaded', loadCharts);
+document.addEventListener('DOMContentLoaded', function() {
+    loadChartData({{ pair.id }});
+});
 </script>
 
 <!-- TradingView Lightweight Charts Integration -->
@@ -468,9 +260,18 @@ document.addEventListener('DOMContentLoaded', function() {
             'USD/JPY': 'FX_IDC:USDJPY',
             'AUD/USD': 'FX_IDC:AUDUSD',
             'CAD/USD': 'FX_IDC:CADUSD',
+            'CHF/USD': 'FX_IDC:CHFUSD',
+            'NZD/USD': 'FX_IDC:NZDUSD',
+            'USD/CHF': 'FX_IDC:USDCHF',
+            'USD/CAD': 'FX_IDC:USDCAD',
+            'EUR/GBP': 'FX_IDC:EURGBP',
+            'EUR/JPY': 'FX_IDC:EURJPY',
+            'GBP/JPY': 'FX_IDC:GBPJPY',
             'BTC/USD': 'BITSTAMP:BTCUSD',
             'ETH/USD': 'BITSTAMP:ETHUSD',
-            'XRP/USD': 'BITSTAMP:XRPUSD'
+            'XRP/USD': 'BITSTAMP:XRPUSD',
+            'LTC/USD': 'BITSTAMP:LTCUSD',
+            'BCH/USD': 'BITSTAMP:BCHUSD'
         };
         
         const tvSymbol = symbolMap[pairSymbol] || pairSymbol;
@@ -481,7 +282,7 @@ document.addEventListener('DOMContentLoaded', function() {
             "width": "100%",
             "height": "500",
             "symbol": tvSymbol,
-            "interval": "D",
+            "interval": "1",
             "timezone": "Etc/UTC",
             "theme": "dark",
             "style": "1",
@@ -491,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
             "gridColor": "rgba(0, 212, 255, 0.1)",
             "hide_side_toolbar": false,
             "withdateranges": true,
-            "range": "3M",
+            "range": "1D",
             "allow_symbol_change": true,
             "save_image": true,
             "container_id": "tradingViewContainer"
@@ -542,6 +343,7 @@ function stopRealtimePriceUpdates() {
 // Start updates when page loads
 document.addEventListener('DOMContentLoaded', function() {
     startRealtimePriceUpdates();
+    loadChartData({{ pair.id }});
 });
 
 // Stop updates when user leaves page

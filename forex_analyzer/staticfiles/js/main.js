@@ -103,7 +103,6 @@ function renderChart(data) {
     
     const timestamps = data.data_points.map(p => new Date(p.timestamp).toLocaleDateString());
     const prices = data.data_points.map(p => p.close);
-    const rsiValues = data.data_points.map(p => p.rsi || 0);
     
     new Chart(ctx, {
         type: 'line',
@@ -119,15 +118,6 @@ function renderChart(data) {
                     tension: 0.4,
                     fill: true,
                     yAxisID: 'y'
-                },
-                {
-                    label: 'RSI',
-                    data: rsiValues,
-                    borderColor: '#ffd93d',
-                    backgroundColor: 'rgba(255, 217, 61, 0.1)',
-                    borderWidth: 2,
-                    tension: 0.4,
-                    yAxisID: 'y1'
                 }
             ]
         },
@@ -169,20 +159,188 @@ function renderChart(data) {
                         color: 'rgba(255, 255, 255, 0.1)'
                     }
                 },
-                y1: {
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+    
+    // Render RSI chart
+    renderRSIChart(data);
+    
+    // Render MACD chart
+    renderMACDChart(data);
+}
+
+/**
+ * Render RSI chart
+ */
+function renderRSIChart(data) {
+    const ctx = document.getElementById('rsiChart');
+    if (!ctx) return;
+    
+    // Filter data points that have RSI indicators
+    const validPoints = data.data_points.filter(p => p.indicators && p.indicators.rsi !== null);
+    const timestamps = validPoints.map(p => new Date(p.timestamp).toLocaleDateString());
+    const rsiValues = validPoints.map(p => p.indicators.rsi);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [
+                {
+                    label: 'RSI',
+                    data: rsiValues,
+                    borderColor: '#ffd93d',
+                    backgroundColor: 'rgba(255, 217, 61, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Overbought (70)',
+                    data: Array(rsiValues.length).fill(70),
+                    borderColor: '#ff6b6b',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Oversold (30)',
+                    data: Array(rsiValues.length).fill(30),
+                    borderColor: '#4ecdc4',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                }
+            }
+        }
+    });
+}
+
+/**
+ * Render MACD chart
+ */
+function renderMACDChart(data) {
+    const ctx = document.getElementById('macdChart');
+    if (!ctx) return;
+    
+    // Filter data points that have MACD indicators
+    const validPoints = data.data_points.filter(p => p.indicators && p.indicators.macd !== null);
+    const timestamps = validPoints.map(p => new Date(p.timestamp).toLocaleDateString());
+    const macdValues = validPoints.map(p => p.indicators.macd);
+    const macdSignal = validPoints.map(p => p.indicators.macd_signal);
+    const macdHistogram = validPoints.map(p => p.indicators.macd_histogram);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: timestamps,
+            datasets: [
+                {
+                    label: 'MACD Histogram',
+                    data: macdHistogram,
+                    backgroundColor: macdHistogram.map(v => v >= 0 ? 'rgba(0, 217, 126, 0.7)' : 'rgba(255, 107, 107, 0.7)'),
+                    borderColor: macdHistogram.map(v => v >= 0 ? '#00d97e' : '#ff6b6b'),
+                    borderWidth: 1
+                },
+                {
+                    label: 'MACD',
+                    data: macdValues,
+                    type: 'line',
+                    borderColor: '#00d97e',
+                    backgroundColor: 'rgba(0, 217, 126, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Signal Line',
+                    data: macdSignal,
+                    type: 'line',
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
                     type: 'linear',
                     display: true,
-                    position: 'right',
+                    position: 'left',
                     title: {
                         display: true,
-                        text: 'RSI',
-                        color: '#ffd93d'
+                        text: 'MACD Value',
+                        color: '#00d97e'
                     },
                     ticks: {
                         color: 'rgba(255, 255, 255, 0.7)'
                     },
                     grid: {
-                        drawOnChartArea: false
+                        color: 'rgba(255, 255, 255, 0.1)'
                     }
                 },
                 x: {
@@ -295,9 +453,14 @@ function getGreedBadgeClass(greedLevel) {
 }
 
 /**
- * Get signal class for trading signal
+ * Refresh data for a specific pair (alias for template compatibility)
  */
-function getSignalClass(signalType) {
+function refreshPairData() {
+    // This is called from template, assume pair id from URL or context
+    const urlParts = window.location.pathname.split('/');
+    const pairId = urlParts[urlParts.length - 2]; // /pair/1/ -> 1
+    refreshPair(null, pairId);
+}
     const classes = {
         'BUY': 'signal-buy',
         'SELL': 'signal-sell',

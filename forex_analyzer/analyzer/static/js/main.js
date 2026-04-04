@@ -98,62 +98,104 @@ function loadChartData(pairId) {
  * Render chart using Chart.js
  */
 function renderChart(data) {
+    const ctx = document.getElementById('priceChart');
+    if (!ctx) return;
+    
     const timestamps = data.data_points.map(p => new Date(p.timestamp).toLocaleDateString());
     const prices = data.data_points.map(p => p.close);
-    const rsiValues = data.data_points.map(p => p.rsi || 0);
-    const macdValues = data.data_points.map(p => p.macd || 0);
-    const macdSignalValues = data.data_points.map(p => p.macd_signal || 0);
     
-    // Price Chart
-    const priceCtx = document.getElementById('priceChart');
-    if (priceCtx) {
-        new Chart(priceCtx, {
-            type: 'line',
-            data: {
-                labels: timestamps,
-                datasets: [{
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [
+                {
                     label: 'Price',
                     data: prices,
                     borderColor: '#00d97e',
                     backgroundColor: 'rgba(0, 217, 126, 0.1)',
                     borderWidth: 2,
                     tension: 0.4,
-                    fill: true
-                }]
+                    fill: true,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                mode: 'index',
+                intersect: false
             },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#fff',
-                            font: { size: 12, weight: 'bold' }
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
                         }
                     }
                 },
-                scales: {
-                    y: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                title: {
+                    color: '#fff'
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'Price',
+                        color: '#00d97e'
                     },
-                    x: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
                     }
                 }
             }
-        });
-    }
+        }
+    });
     
-    // RSI Chart
-    const rsiCtx = document.getElementById('rsiChart');
-    if (rsiCtx) {
-        new Chart(rsiCtx, {
-            type: 'line',
-            data: {
-                labels: timestamps,
-                datasets: [{
+    // Render RSI chart
+    renderRSIChart(data);
+    
+    // Render MACD chart
+    renderMACDChart(data);
+}
+
+/**
+ * Render RSI chart
+ */
+function renderRSIChart(data) {
+    const ctx = document.getElementById('rsiChart');
+    if (!ctx) return;
+    
+    // Filter data points that have RSI indicators
+    const validPoints = data.data_points.filter(p => p.indicators && p.indicators.rsi !== null);
+    const timestamps = validPoints.map(p => new Date(p.timestamp).toLocaleDateString());
+    const rsiValues = validPoints.map(p => p.indicators.rsi);
+    
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timestamps,
+            datasets: [
+                {
                     label: 'RSI',
                     data: rsiValues,
                     borderColor: '#ffd93d',
@@ -161,83 +203,157 @@ function renderChart(data) {
                     borderWidth: 2,
                     tension: 0.4,
                     fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#fff',
-                            font: { size: 12, weight: 'bold' }
+                },
+                {
+                    label: 'Overbought (70)',
+                    data: Array(rsiValues.length).fill(70),
+                    borderColor: '#ff6b6b',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Oversold (30)',
+                    data: Array(rsiValues.length).fill(30),
+                    borderColor: '#4ecdc4',
+                    borderWidth: 1,
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        min: 0,
-                        max: 100,
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            scales: {
+                y: {
+                    min: 0,
+                    max: 100,
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
                     },
-                    x: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
                     }
                 }
             }
-        });
-    }
+        }
+    });
+}
+
+/**
+ * Render MACD chart
+ */
+function renderMACDChart(data) {
+    const ctx = document.getElementById('macdChart');
+    if (!ctx) return;
     
-    // MACD Chart
-    const macdCtx = document.getElementById('macdChart');
-    if (macdCtx) {
-        new Chart(macdCtx, {
-            type: 'line',
-            data: {
-                labels: timestamps,
-                datasets: [
-                    {
-                        label: 'MACD',
-                        data: macdValues,
-                        borderColor: '#ff6b6b',
-                        borderWidth: 2,
-                        tension: 0.4
-                    },
-                    {
-                        label: 'Signal',
-                        data: macdSignalValues,
-                        borderColor: '#4ecdc4',
-                        borderWidth: 2,
-                        tension: 0.4
-                    }
-                ]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        labels: {
-                            color: '#fff',
-                            font: { size: 12, weight: 'bold' }
+    // Filter data points that have MACD indicators
+    const validPoints = data.data_points.filter(p => p.indicators && p.indicators.macd !== null);
+    const timestamps = validPoints.map(p => new Date(p.timestamp).toLocaleDateString());
+    const macdValues = validPoints.map(p => p.indicators.macd);
+    const macdSignal = validPoints.map(p => p.indicators.macd_signal);
+    const macdHistogram = validPoints.map(p => p.indicators.macd_histogram);
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: timestamps,
+            datasets: [
+                {
+                    label: 'MACD Histogram',
+                    data: macdHistogram,
+                    backgroundColor: macdHistogram.map(v => v >= 0 ? 'rgba(0, 217, 126, 0.7)' : 'rgba(255, 107, 107, 0.7)'),
+                    borderColor: macdHistogram.map(v => v >= 0 ? '#00d97e' : '#ff6b6b'),
+                    borderWidth: 1
+                },
+                {
+                    label: 'MACD',
+                    data: macdValues,
+                    type: 'line',
+                    borderColor: '#00d97e',
+                    backgroundColor: 'rgba(0, 217, 126, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false,
+                    yAxisID: 'y'
+                },
+                {
+                    label: 'Signal Line',
+                    data: macdSignal,
+                    type: 'line',
+                    borderColor: '#ff6b6b',
+                    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false,
+                    yAxisID: 'y'
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        color: '#fff',
+                        font: {
+                            size: 12,
+                            weight: 'bold'
                         }
                     }
-                },
-                scales: {
-                    y: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: {
+                        display: true,
+                        text: 'MACD Value',
+                        color: '#00d97e'
                     },
-                    x: {
-                        ticks: { color: 'rgba(255, 255, 255, 0.7)' },
-                        grid: { color: 'rgba(255, 255, 255, 0.1)' }
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
+                    }
+                },
+                x: {
+                    ticks: {
+                        color: 'rgba(255, 255, 255, 0.7)'
+                    },
+                    grid: {
+                        color: 'rgba(255, 255, 255, 0.1)'
                     }
                 }
             }
-        });
-    }
+        }
+    });
 }
 
 /**
@@ -337,9 +453,15 @@ function getGreedBadgeClass(greedLevel) {
 }
 
 /**
- * Get signal class for trading signal
+ * Refresh data for a specific pair (alias for template compatibility)
  */
-function getSignalClass(signalType) {
+function refreshPairData() {
+    // This is called from template, assume pair id from URL or context
+    const urlParts = window.location.pathname.split('/');
+    const pairId = urlParts[urlParts.length - 2]; // /pair/1/ -> 1
+    const fakeEvent = { target: document.querySelector('button[onclick*="refreshPairData"]') };
+    refreshPair(fakeEvent, pairId);
+}
     const classes = {
         'BUY': 'signal-buy',
         'SELL': 'signal-sell',
