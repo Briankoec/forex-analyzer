@@ -16,7 +16,7 @@
                 </h1>
                 <p class="text-muted">{{ pair.name }}</p>
             </div>
-            <button class="btn btn-primary" onclick="refreshPairData()">
+            <button class="btn btn-primary" onclick="refreshPair(event, {{ pair.id }})">
                 <i class="fas fa-sync-alt"></i> Refresh Data
             </button>
         </div>
@@ -107,53 +107,14 @@
 <div class="row mb-4">
     <div class="col-lg-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0"><i class="fas fa-bolt text-glow-green"></i> Live TradingView Chart</h5>
+                <div id="tradingViewSignalBadge" class="badge badge-neutral" style="font-size: 0.85rem; padding: 0.7rem 1rem;">
+                    <i class="fas fa-chart-line me-1"></i> Signal loading...
+                </div>
             </div>
-            <div class="card-body" style="padding: 0; background: rgba(0, 0, 0, 0.5);">
+            <div class="card-body position-relative" style="padding: 0; background: rgba(0, 0, 0, 0.5);">
                 <div id="tradingViewContainer" style="width: 100%; height: 500px;"></div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-lg-12">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">Price Chart</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 400px;">
-                    <canvas id="priceChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row mb-4">
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">RSI Indicator</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="rsiChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-    <div class="col-lg-6">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="mb-0">MACD Indicator</h5>
-            </div>
-            <div class="card-body">
-                <div class="chart-container" style="height: 300px;">
-                    <canvas id="macdChart"></canvas>
-                </div>
             </div>
         </div>
     </div>
@@ -233,16 +194,11 @@
 
 {% else %}
 <div class="alert alert-warning">
-    <i class="fas fa-exclamation-circle"></i> No data available for this pair yet. <button class="btn btn-sm btn-primary" onclick="refreshPairData()">Fetch Data</button>
+    <i class="fas fa-exclamation-circle"></i> No data available for this pair yet. <button class="btn btn-sm btn-primary" onclick="refreshPair(event, {{ pair.id }})">Fetch Data</button>
 </div>
 {% endif %}
 
 
-
-document.addEventListener('DOMContentLoaded', function() {
-    loadChartData({{ pair.id }});
-});
-</script>
 
 <!-- TradingView Lightweight Charts Integration -->
 <script src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js"></script>
@@ -271,12 +227,14 @@ document.addEventListener('DOMContentLoaded', function() {
             'ETH/USD': 'BITSTAMP:ETHUSD',
             'XRP/USD': 'BITSTAMP:XRPUSD',
             'LTC/USD': 'BITSTAMP:LTCUSD',
-            'BCH/USD': 'BITSTAMP:BCHUSD'
+            'BCH/USD': 'BITSTAMP:BCHUSD',
+            'XAU/USD': 'OANDA:XAUUSD',
+            'XAG/USD': 'OANDA:XAGUSD'
         };
         
         const tvSymbol = symbolMap[pairSymbol] || pairSymbol;
         
-        // Create TradingView widget
+        // Create TradingView widget with on-chart indicators
         new TradingView.widget({
             "autosize": false,
             "width": "100%",
@@ -295,66 +253,109 @@ document.addEventListener('DOMContentLoaded', function() {
             "range": "1D",
             "allow_symbol_change": true,
             "save_image": true,
-            "container_id": "tradingViewContainer"
+            "container_id": "tradingViewContainer",
+            "studies": ["MACD@tv-basicstudies"],
+            "show_popup_button": false,
+            "hotlist": false
         });
     }
-    
-    // Real-time price polling (every 10 seconds)
-let pricePollingInterval;
 
-function startRealtimePriceUpdates() {
-    // Show live indicator
-    document.getElementById('liveIndicator').style.display = 'inline-block';
-    
-    pricePollingInterval = setInterval(function() {
-        fetch(`/api/pair/{{ pair.id }}/data/?recent=true`)
+    function updateTradingSignalBadge() {
+        const badge = document.getElementById('tradingViewSignalBadge');
+        if (!badge) return;
+
+        fetch(`/api/pair/{{ pair.id }}/signals/`)
             .then(response => response.json())
             .then(data => {
-                if (data.data_points && data.data_points.length > 0) {
-                    const latestPoint = data.data_points[0];
-                    
-                    // Update price with animation
-                    const priceElement = document.getElementById('livePrice');
-                    const oldPrice = parseFloat(priceElement.textContent);
-                    const newPrice = parseFloat(latestPoint.close_price);
-                    
-                    // Add price change animation
-                    if (newPrice > oldPrice) {
-                        priceElement.style.color = '#00ff88';
-                    } else if (newPrice < oldPrice) {
-                        priceElement.style.color = '#ff3333';
-                    }
-                    
-                    priceElement.textContent = latestPoint.close_price;
-                    document.getElementById('priceTimestamp').textContent = new Date(latestPoint.timestamp).toLocaleString();
+                if (!data.signals || data.signals.length === 0) {
+                    badge.className = 'badge badge-neutral';
+                    badge.innerHTML = '<i class="fas fa-chart-line me-1"></i> No Signal';
+                    return;
+                }
+
+                const latestSignal = data.signals[0];
+                if (latestSignal.type === 'BUY') {
+                    badge.className = 'badge badge-extreme-greed';
+                    badge.innerHTML = '<i class="fas fa-arrow-up me-1"></i> BUY';
+                } else if (latestSignal.type === 'SELL') {
+                    badge.className = 'badge badge-extreme-fear';
+                    badge.innerHTML = '<i class="fas fa-arrow-down me-1"></i> SELL';
+                } else {
+                    badge.className = 'badge badge-neutral';
+                    badge.innerHTML = '<i class="fas fa-minus me-1"></i> HOLD';
                 }
             })
-            .catch(error => console.error('Real-time price update error:', error));
-    }, 10000); // Update every 10 seconds
-}
-
-function stopRealtimePriceUpdates() {
-    if (pricePollingInterval) {
-        clearInterval(pricePollingInterval);
+            .catch(error => {
+                console.error('Signal badge update failed:', error);
+                badge.className = 'badge badge-neutral';
+                badge.innerHTML = '<i class="fas fa-exclamation-triangle me-1"></i> Signal error';
+            });
     }
-    document.getElementById('liveIndicator').style.display = 'none';
-}
 
-// Start updates when page loads
-document.addEventListener('DOMContentLoaded', function() {
-    startRealtimePriceUpdates();
-    loadChartData({{ pair.id }});
-});
+    let pricePollingInterval;
+    let signalPollingInterval;
 
-// Stop updates when user leaves page
-document.addEventListener('visibilitychange', function() {
-    if (document.hidden) {
-        stopRealtimePriceUpdates();
-    } else {
+    function startRealtimePriceUpdates() {
+        const liveIndicator = document.getElementById('liveIndicator');
+        if (liveIndicator) {
+            liveIndicator.style.display = 'inline-block';
+        }
+
+        pricePollingInterval = setInterval(function() {
+            fetch(`/api/pair/{{ pair.id }}/data/?recent=true`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.data_points && data.data_points.length > 0) {
+                        const latestPoint = data.data_points[0];
+                        const priceElement = document.getElementById('livePrice');
+                        const timestampElement = document.getElementById('priceTimestamp');
+
+                        if (priceElement && timestampElement) {
+                            const oldPrice = parseFloat(priceElement.textContent);
+                            const newPrice = parseFloat(latestPoint.close_price);
+
+                            if (newPrice > oldPrice) {
+                                priceElement.style.color = '#00ff88';
+                            } else if (newPrice < oldPrice) {
+                                priceElement.style.color = '#ff3333';
+                            }
+
+                            priceElement.textContent = latestPoint.close_price;
+                            timestampElement.textContent = new Date(latestPoint.timestamp).toLocaleString();
+                        }
+                    }
+                })
+                .catch(error => console.error('Real-time price update error:', error));
+        }, 10000);
+
+        signalPollingInterval = setInterval(updateTradingSignalBadge, 20000);
+    }
+
+    function stopRealtimePriceUpdates() {
+        if (pricePollingInterval) {
+            clearInterval(pricePollingInterval);
+        }
+        if (signalPollingInterval) {
+            clearInterval(signalPollingInterval);
+        }
+        const liveIndicator = document.getElementById('liveIndicator');
+        if (liveIndicator) {
+            liveIndicator.style.display = 'none';
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
         startRealtimePriceUpdates();
-    }
-});
+        updateTradingSignalBadge();
+    });
 
+    document.addEventListener('visibilitychange', function() {
+        if (document.hidden) {
+            stopRealtimePriceUpdates();
+        } else {
+            startRealtimePriceUpdates();
+        }
+    });
 });
 </script>
 {% endblock %}
